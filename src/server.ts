@@ -9,8 +9,10 @@ import { renderErrorPage } from "./lib/error-page";
 function seedServerEnv() {
   const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
   if (!env) return;
-  const url = import.meta.env["VITE_SUPABASE_URL"];
-  const key = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+  const url = import.meta.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+  const key =
+    import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+    process.env["SUPABASE_PUBLISHABLE_KEY"];
   if (url && !env["SUPABASE_URL"]) env["SUPABASE_URL"] = url;
   if (key && !env["SUPABASE_PUBLISHABLE_KEY"]) env["SUPABASE_PUBLISHABLE_KEY"] = key;
 }
