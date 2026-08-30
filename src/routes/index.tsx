@@ -184,8 +184,8 @@ function HomePage() {
             const outcome = predict(userGenotype, partnerGenotype);
             if (user) {
               try {
-                const { error } = await supabase.from("predictions").insert({
-                  user_id: user.id,
+                console.log("Saving prediction for user:", user.id);
+                console.log("Prediction data:", {
                   user_genotype: outcome.user,
                   partner_genotype: outcome.partner,
                   aa_percent: outcome.percentages.AA,
@@ -193,11 +193,24 @@ function HomePage() {
                   ss_percent: outcome.percentages.SS,
                   risk_level: outcome.risk,
                 });
+                const { data, error } = await supabase.from("predictions").insert({
+                  user_id: user.id,
+                  user_genotype: outcome.user,
+                  partner_genotype: outcome.partner,
+                  aa_percent: Number(outcome.percentages.AA),
+                  as_percent: Number(outcome.percentages.AS),
+                  ss_percent: Number(outcome.percentages.SS),
+                  risk_level: outcome.risk,
+                }).select();
                 if (error) {
                   console.error("Failed to save prediction:", error);
+                  alert(`Error saving prediction: ${error.message}`);
+                } else {
+                  console.log("Prediction saved successfully:", data);
                 }
               } catch (err) {
                 console.error("Error saving prediction:", err);
+                alert(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
               }
             }
             navigate({ to: "/predictor" });

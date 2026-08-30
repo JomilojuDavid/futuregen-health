@@ -46,16 +46,25 @@ function HistoryPage() {
   const [itemsPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
-  const { data: allPredictions, isLoading } = useQuery({
+  const { data: allPredictions, isLoading, error: queryError } = useQuery({
     queryKey: ["predictions", user?.id],
     enabled: !!user,
     queryFn: async () => {
+      if (!user?.id) {
+        console.log("No user ID available");
+        return [];
+      }
+      console.log("Fetching predictions for user:", user.id);
       const { data, error } = await supabase
         .from("predictions")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      if (error) throw error;
+      if (error) {
+        console.error("Query error:", error);
+        throw error;
+      }
+      console.log("Predictions fetched:", data);
       return data || [];
     },
   });
@@ -208,6 +217,14 @@ function HistoryPage() {
             Export to CSV
           </Button>
         </section>
+      )}
+
+      {/* Error State */}
+      {queryError && (
+        <div className="rounded-3xl bg-danger/10 p-6 text-center">
+          <p className="text-sm font-semibold text-danger">Failed to load predictions</p>
+          <p className="mt-1 text-xs text-danger/80">{queryError instanceof Error ? queryError.message : "Unknown error"}</p>
+        </div>
       )}
 
       {/* Predictions List */}
