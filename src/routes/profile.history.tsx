@@ -6,6 +6,7 @@ import { AppFooter } from "@/components/AppFooter";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { RiskBadge } from "@/components/RiskBadge";
+import { RequireAuth } from "@/components/RequireAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +29,11 @@ export const Route = createFileRoute("/profile/history")({
       { property: "og:description", content: "Every genotype check you have run, with detailed results, risk assessments and predictions." },
     ],
   }),
-  component: HistoryPage,
+  component: () => (
+    <RequireAuth>
+      <HistoryPage />
+    </RequireAuth>
+  ),
 });
 
 type SortBy = "date-newest" | "date-oldest" | "risk-highest" | "risk-lowest";

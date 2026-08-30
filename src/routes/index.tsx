@@ -179,19 +179,26 @@ function HomePage() {
         <Button
           size="lg"
           className="h-13 w-full rounded-2xl py-6 text-base font-semibold"
-          onClick={() => {
+          onClick={async () => {
             savePair({ user: userGenotype, partner: partnerGenotype });
             const outcome = predict(userGenotype, partnerGenotype);
             if (user) {
-              void supabase.from("predictions").insert({
-                user_id: user.id,
-                user_genotype: outcome.user,
-                partner_genotype: outcome.partner,
-                aa_percent: outcome.percentages.AA,
-                as_percent: outcome.percentages.AS,
-                ss_percent: outcome.percentages.SS,
-                risk_level: outcome.risk,
-              });
+              try {
+                const { error } = await supabase.from("predictions").insert({
+                  user_id: user.id,
+                  user_genotype: outcome.user,
+                  partner_genotype: outcome.partner,
+                  aa_percent: outcome.percentages.AA,
+                  as_percent: outcome.percentages.AS,
+                  ss_percent: outcome.percentages.SS,
+                  risk_level: outcome.risk,
+                });
+                if (error) {
+                  console.error("Failed to save prediction:", error);
+                }
+              } catch (err) {
+                console.error("Error saving prediction:", err);
+              }
             }
             navigate({ to: "/predictor" });
           }}
