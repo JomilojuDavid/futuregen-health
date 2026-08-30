@@ -1,12 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ShieldCheck, Sparkles } from "lucide-react";
+import { ShieldCheck, Sparkles, Dna } from "lucide-react";
 import { AppFooter } from "@/components/AppFooter";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { GenotypePills } from "@/components/GenotypePills";
-import { RequireAuth } from "@/components/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,15 +28,11 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  component: () => (
-    <RequireAuth>
-      <HomePage />
-    </RequireAuth>
-  ),
+  component: HomePage,
 });
 
 function HomePage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [userGenotype, setUserGenotype] = useState<Genotype>("AS");
   const [partnerGenotype, setPartnerGenotype] = useState<Genotype>("AS");
@@ -66,6 +61,98 @@ function HomePage() {
     }
   }, [profile]);
 
+  if (loading) {
+    return (
+      <div className="app-shell flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-r-transparent mx-auto"></div>
+          <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Public landing page when not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+          <div className="w-full max-w-md space-y-8 text-center">
+            {/* Logo/Icon */}
+            <div className="flex justify-center">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl"></div>
+                <div className="relative bg-primary/10 rounded-full p-4">
+                  <Dna className="h-12 w-12 text-primary" />
+                </div>
+              </div>
+            </div>
+
+            {/* Hero Content */}
+            <div className="space-y-3">
+              <h1 className="text-4xl font-bold tracking-tight text-foreground">
+                SicklePredict
+              </h1>
+              <p className="text-xl font-medium text-primary">Know Today, Protect Tomorrow</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Understand genotype compatibility and predict possible health outcomes for future children.
+              </p>
+            </div>
+
+            {/* Features */}
+            <div className="space-y-2 pt-4">
+              <div className="flex items-start gap-3 text-sm">
+                <div className="flex-shrink-0 mt-1">
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20">
+                    <div className="h-2 w-2 rounded-full bg-primary"></div>
+                  </div>
+                </div>
+                <p className="text-muted-foreground">Punnett square genetics predictions</p>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <div className="flex-shrink-0 mt-1">
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20">
+                    <div className="h-2 w-2 rounded-full bg-primary"></div>
+                  </div>
+                </div>
+                <p className="text-muted-foreground">Sickle cell risk assessment</p>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <div className="flex-shrink-0 mt-1">
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20">
+                    <div className="h-2 w-2 rounded-full bg-primary"></div>
+                  </div>
+                </div>
+                <p className="text-muted-foreground">Medical education and resources</p>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="pt-4 space-y-3">
+              <Link
+                to="/auth"
+                className="block"
+              >
+                <Button size="lg" className="w-full h-12 rounded-2xl text-base font-semibold">
+                  Get Started
+                </Button>
+              </Link>
+              <p className="text-xs text-muted-foreground">
+                Already have an account?{" "}
+                <Link to="/auth" className="font-semibold text-primary hover:underline">
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <AppFooter />
+      </div>
+    );
+  }
+
+  // Authenticated home page
   const firstName = (profile?.full_name || user?.email?.split("@")[0] || "there").split(" ")[0];
 
   return (
