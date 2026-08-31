@@ -55,6 +55,24 @@ function OAuthCallbackPage() {
           navigate({ to: "/auth" });
           return;
         }
+
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData.user?.id;
+
+        if (userId) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", userId)
+            .maybeSingle();
+
+          if (!profile?.username?.trim()) {
+            toast.error("Please set a nickname before continuing.");
+            navigate({ to: "/profile/settings?requireUsername=1" });
+            return;
+          }
+        }
+
         toast.success("Signed in with Google");
         navigate({ to: "/" });
         return;

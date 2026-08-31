@@ -53,6 +53,7 @@ function SettingsPage() {
   const [partnerGender, setPartnerGender] = useState("male");
   const [genotype, setGenotype] = useState<Genotype>("AA");
   const [saving, setSaving] = useState(false);
+  const [requireNickname, setRequireNickname] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -64,6 +65,9 @@ function SettingsPage() {
   });
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setRequireNickname(params.get("requireUsername") === "1");
+
     if (!profile) return;
     setFullName(profile.full_name ?? "");
     setUsername(profile.username ?? "");
@@ -75,6 +79,12 @@ function SettingsPage() {
 
   async function save() {
     if (!user) return;
+
+    if (requireNickname && !username.trim()) {
+      toast.error("Nickname is required before continuing.");
+      return;
+    }
+
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
@@ -90,7 +100,10 @@ function SettingsPage() {
       .eq("id", user.id);
     setSaving(false);
     if (error) toast.error("Could not save changes");
-    else toast.success("Changes saved");
+    else {
+      toast.success(requireNickname ? "Nickname saved. Welcome!" : "Changes saved");
+      if (requireNickname) navigate({ to: "/" });
+    }
   }
 
   async function deleteAccount() {
@@ -112,13 +125,24 @@ function SettingsPage() {
       <AppHeader title="Settings" subtitle="Edit profile" backTo="/profile" />
 
       <div className="space-y-5 rounded-3xl bg-card p-5 shadow-soft">
+        {requireNickname ? (
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
+            Set your nickname to continue using the app.
+          </div>
+        ) : null}
+
         <div className="space-y-2">
           <Label htmlFor="name">Full Name</Label>
           <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
-          <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <Label htmlFor="username">Nickname</Label>
+          <Input
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required={requireNickname}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="settings-email">Email</Label>
@@ -154,8 +178,12 @@ function SettingsPage() {
           </RadioGroup>
         </div>
 
-        <Button className="w-full rounded-2xl py-6" onClick={save} disabled={saving}>
-          Save Changes
+        <Button
+          className="w-full rounded-2xl py-6"
+          onClick={save}
+          disabled={saving || (requireNickname && !username.trim())}
+        >
+          {requireNickname ? "Set Nickname & Continue" : "Save Changes"}
         </Button>
 
         <AlertDialog>

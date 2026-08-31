@@ -203,7 +203,7 @@ function AuthPage() {
 
           {mode === "signup" ? (
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Nickname</Label>
               <Input
                 id="username"
                 value={username}

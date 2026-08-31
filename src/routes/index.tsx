@@ -44,7 +44,7 @@ function HomePage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, genotype, partner_genotype")
+        .select("full_name, username, genotype, partner_genotype")
         .eq("id", user!.id)
         .maybeSingle();
       return data;
@@ -150,11 +150,13 @@ function HomePage() {
   }
 
   // Authenticated home page
-  const firstName = (profile?.full_name || user?.email?.split("@")[0] || "there").split(" ")[0];
+  const displayName =
+    profile?.username?.trim() ||
+    (profile?.full_name || user?.email?.split("@")[0] || "there").split(" ")[0];
 
   return (
     <div className="app-shell">
-      <AppHeader title={`Hi, ${firstName}`} subtitle="Welcome back to SicklePredict" />
+      <AppHeader title={`Hi, ${displayName}`} subtitle="Welcome back to SicklePredict" />
 
       <section className="relative overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground shadow-card">
         <Sparkles className="absolute -right-4 -top-4 h-28 w-28 opacity-15" />
