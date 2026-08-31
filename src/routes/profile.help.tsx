@@ -13,9 +13,15 @@ export const Route = createFileRoute("/profile/help")({
   head: () => ({
     meta: [
       { title: "Help & support — SicklePredict" },
-      { name: "description", content: "Answers to common SicklePredict questions and how to reach support." },
+      {
+        name: "description",
+        content: "Answers to common SicklePredict questions and how to reach support.",
+      },
       { property: "og:title", content: "Help & support — SicklePredict" },
-      { property: "og:description", content: "Common questions about sickle cell and the predictor." },
+      {
+        property: "og:description",
+        content: "Common questions about sickle cell and the predictor.",
+      },
     ],
   }),
   component: HelpPage,

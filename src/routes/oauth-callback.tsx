@@ -21,7 +21,8 @@ function readTokens() {
   const query = new URLSearchParams(window.location.search);
   const access_token = hash.get("access_token") ?? query.get("access_token");
   const refresh_token = hash.get("refresh_token") ?? query.get("refresh_token");
-  const error = hash.get("error_description") ?? query.get("error_description") ?? query.get("error");
+  const error =
+    hash.get("error_description") ?? query.get("error_description") ?? query.get("error");
   if (error) return { error };
   if (access_token && refresh_token) return { access_token, refresh_token };
   return null;

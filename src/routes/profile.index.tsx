@@ -1,15 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Bell,
-  ChevronRight,
-  History,
-  Info,
-  LifeBuoy,
-  LogOut,
-  Settings,
-  Star,
-} from "lucide-react";
+import { Bell, ChevronRight, History, Info, LifeBuoy, LogOut, Settings, Star } from "lucide-react";
 import { AppFooter } from "@/components/AppFooter";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
@@ -77,9 +68,7 @@ function ProfilePage() {
           {username ? <p className="text-sm text-muted-foreground">{username}</p> : null}
           <p className="text-sm text-muted-foreground">Stay informed, stay protected.</p>
           {profile?.genotype ? (
-            <p className="mt-1 text-xs font-semibold text-primary">
-              Genotype: {profile.genotype}
-            </p>
+            <p className="mt-1 text-xs font-semibold text-primary">Genotype: {profile.genotype}</p>
           ) : null}
         </div>
       </section>

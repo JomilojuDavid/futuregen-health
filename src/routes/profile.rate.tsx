@@ -15,7 +15,10 @@ export const Route = createFileRoute("/profile/rate")({
   head: () => ({
     meta: [
       { title: "Rate SicklePredict" },
-      { name: "description", content: "Rate the SicklePredict app and share feedback with the team." },
+      {
+        name: "description",
+        content: "Rate the SicklePredict app and share feedback with the team.",
+      },
       { property: "og:title", content: "Rate SicklePredict" },
       { property: "og:description", content: "Tell us how SicklePredict is working for you." },
     ],
@@ -54,7 +57,9 @@ function RatePage() {
 
       <section className="rounded-3xl bg-card p-6 text-center shadow-card">
         <h2 className="text-xl font-semibold">How are we doing?</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Your rating helps more families stay informed.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Your rating helps more families stay informed.
+        </p>
         <div className="mt-5 flex justify-center gap-2">
           {[1, 2, 3, 4, 5].map((star) => (
             <button

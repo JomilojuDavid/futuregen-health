@@ -29,9 +29,15 @@ export const Route = createFileRoute("/profile/settings")({
   head: () => ({
     meta: [
       { title: "Edit profile — SicklePredict" },
-      { name: "description", content: "Update your name, email, gender, genotype and partner details." },
+      {
+        name: "description",
+        content: "Update your name, email, gender, genotype and partner details.",
+      },
       { property: "og:title", content: "Edit profile — SicklePredict" },
-      { property: "og:description", content: "Keep your SicklePredict profile details up to date." },
+      {
+        property: "og:description",
+        content: "Keep your SicklePredict profile details up to date.",
+      },
     ],
   }),
   component: SettingsPage,
@@ -52,11 +58,7 @@ function SettingsPage() {
     queryKey: ["profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user!.id)
-        .maybeSingle();
+      const { data } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle();
       return data;
     },
   });

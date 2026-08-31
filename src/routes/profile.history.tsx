@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { ChevronDown, Download, TrendingUp } from "lucide-react";
+import { ChevronDown, Download, TrendingUp, Eye, Trash2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { AppFooter } from "@/components/AppFooter";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
@@ -16,6 +17,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import type { RiskLevel } from "@/lib/genetics";
@@ -24,9 +41,17 @@ export const Route = createFileRoute("/profile/history")({
   head: () => ({
     meta: [
       { title: "My results history — SicklePredict" },
-      { name: "description", content: "Complete chronological log of all your past genotype compatibility checks and results." },
+      {
+        name: "description",
+        content:
+          "Complete chronological log of all your past genotype compatibility checks and results.",
+      },
       { property: "og:title", content: "My results history — SicklePredict" },
-      { property: "og:description", content: "Every genotype check you have run, with detailed results, risk assessments and predictions." },
+      {
+        property: "og:description",
+        content:
+          "Every genotype check you have run, with detailed results, risk assessments and predictions.",
+      },
     ],
   }),
   component: () => (
@@ -39,14 +64,34 @@ export const Route = createFileRoute("/profile/history")({
 type SortBy = "date-newest" | "date-oldest" | "risk-highest" | "risk-lowest";
 type FilterBy = "all" | "high" | "moderate" | "low";
 
+type Prediction = {
+  id: string;
+  user_id: string;
+  user_genotype: string;
+  partner_genotype: string;
+  aa_percent: number | string;
+  as_percent: number | string;
+  ss_percent: number | string;
+  risk_level: string;
+  created_at: string;
+};
+
 function HistoryPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [sortBy, setSortBy] = useState<SortBy>("date-newest");
   const [filterBy, setFilterBy] = useState<FilterBy>("all");
   const [itemsPerPage] = useState(10);
   const [page, setPage] = useState(1);
+  const [selectedResult, setSelectedResult] = useState<Prediction | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const { data: allPredictions, isLoading, error: queryError } = useQuery({
+  const {
+    data: allPredictions,
+    isLoading,
+    error: queryError,
+  } = useQuery({
     queryKey: ["predictions", user?.id],
     enabled: !!user,
     queryFn: async () => {
@@ -81,18 +126,22 @@ function HistoryPage() {
     const arr = [...filtered];
     switch (sortBy) {
       case "date-newest":
-        return arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        return arr.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
       case "date-oldest":
-        return arr.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        return arr.sort(
+          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        );
       case "risk-highest":
         return arr.sort((a, b) => {
-          const riskOrder = { high: 3, moderate: 2, low: 1 };
-          return (riskOrder[b.risk_level as any] || 0) - (riskOrder[a.risk_level as any] || 0);
+          const riskOrder: Record<string, number> = { high: 3, moderate: 2, low: 1 };
+          return (riskOrder[b.risk_level] || 0) - (riskOrder[a.risk_level] || 0);
         });
       case "risk-lowest":
         return arr.sort((a, b) => {
-          const riskOrder = { high: 3, moderate: 2, low: 1 };
-          return (riskOrder[a.risk_level as any] || 0) - (riskOrder[b.risk_level as any] || 0);
+          const riskOrder: Record<string, number> = { high: 3, moderate: 2, low: 1 };
+          return (riskOrder[a.risk_level] || 0) - (riskOrder[b.risk_level] || 0);
         });
       default:
         return arr;
@@ -106,11 +155,11 @@ function HistoryPage() {
   // Calculate stats
   const stats = useMemo(() => {
     if (!allPredictions || allPredictions.length === 0) return null;
-    const riskCounts = { high: 0, moderate: 0, low: 0 };
+    const riskCounts: Record<string, number> = { high: 0, moderate: 0, low: 0 };
     let totalSsRisk = 0;
 
     allPredictions.forEach((p) => {
-      riskCounts[p.risk_level as any]++;
+      riskCounts[p.risk_level]++;
       totalSsRisk += Number(p.ss_percent);
     });
 
@@ -148,9 +197,36 @@ function HistoryPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleDelete = async (id: string) => {
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("predictions")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user?.id);
+
+      if (error) throw error;
+
+      // Invalidate and refetch predictions
+      queryClient.invalidateQueries({ queryKey: ["predictions", user?.id] });
+      setDeleteConfirmId(null);
+      toast.success("Prediction deleted successfully");
+    } catch (error) {
+      console.error("Error deleting prediction:", error);
+      toast.error("Failed to delete prediction. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="app-shell">
-      <AppHeader title="My Results History" subtitle="Complete prediction report" backTo="/profile" />
+      <AppHeader
+        title="My Results History"
+        subtitle="Complete prediction report"
+        backTo="/profile"
+      />
 
       {/* Stats Section */}
       {!isLoading && stats && (
@@ -184,7 +260,13 @@ function HistoryPage() {
       {!isLoading && allPredictions && allPredictions.length > 0 && (
         <section className="mb-4 space-y-3">
           <div className="flex gap-2">
-            <Select value={filterBy} onValueChange={(v) => { setFilterBy(v as FilterBy); setPage(1); }}>
+            <Select
+              value={filterBy}
+              onValueChange={(v) => {
+                setFilterBy(v as FilterBy);
+                setPage(1);
+              }}
+            >
               <SelectTrigger className="flex-1">
                 <SelectValue />
               </SelectTrigger>
@@ -195,7 +277,13 @@ function HistoryPage() {
                 <SelectItem value="low">Low Risk</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sortBy} onValueChange={(v) => { setSortBy(v as SortBy); setPage(1); }}>
+            <Select
+              value={sortBy}
+              onValueChange={(v) => {
+                setSortBy(v as SortBy);
+                setPage(1);
+              }}
+            >
               <SelectTrigger className="flex-1">
                 <SelectValue />
               </SelectTrigger>
@@ -207,12 +295,7 @@ function HistoryPage() {
               </SelectContent>
             </Select>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={handleExport}
-          >
+          <Button variant="outline" size="sm" className="w-full" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
             Export to CSV
           </Button>
@@ -223,7 +306,9 @@ function HistoryPage() {
       {queryError && (
         <div className="rounded-3xl bg-danger/10 p-6 text-center">
           <p className="text-sm font-semibold text-danger">Failed to load predictions</p>
-          <p className="mt-1 text-xs text-danger/80">{queryError instanceof Error ? queryError.message : "Unknown error"}</p>
+          <p className="mt-1 text-xs text-danger/80">
+            {queryError instanceof Error ? queryError.message : "Unknown error"}
+          </p>
         </div>
       )}
 
@@ -267,6 +352,26 @@ function HistoryPage() {
                         SS {row.ss_percent}%
                       </span>
                     </div>
+                    {/* Action Buttons */}
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setSelectedResult(row)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Details
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-danger hover:text-danger hover:bg-danger/10"
+                        onClick={() => setDeleteConfirmId(row.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                   <RiskBadge risk={row.risk_level as RiskLevel} />
                 </div>
@@ -300,10 +405,142 @@ function HistoryPage() {
           )}
         </>
       ) : (
-        <p className="rounded-3xl bg-card p-6 text-center text-sm text-muted-foreground shadow-soft">
-          No {filterBy !== "all" ? filterBy + " risk" : ""} predictions found. Run your first prediction from the Home screen.
-        </p>
+        <div className="rounded-3xl bg-card p-6 text-center shadow-soft space-y-3">
+          <p className="text-sm font-semibold text-foreground">
+            No {filterBy !== "all" ? filterBy + " risk" : ""} predictions found
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {allPredictions?.length === 0
+              ? "You haven't run any predictions yet. Start by using the Predictor to analyze genetic compatibility."
+              : `No results match your current filter. Try adjusting your filter settings or create a new prediction.`}
+          </p>
+        </div>
       )}
+
+      {/* Details Dialog */}
+      <Dialog
+        open={selectedResult !== null}
+        onOpenChange={(open) => !open && setSelectedResult(null)}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Prediction Details</DialogTitle>
+            <DialogDescription>
+              Complete information about this genetic prediction
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedResult && (
+            <div className="space-y-4">
+              <div className="rounded-2xl bg-muted/50 p-4 space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium mb-1">Date & Time</p>
+                  <p className="text-sm font-semibold">
+                    {new Date(selectedResult.created_at).toLocaleDateString(undefined, {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium mb-1">Your Genotype</p>
+                    <p className="text-lg font-bold">{selectedResult.user_genotype}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium mb-1">
+                      Partner Genotype
+                    </p>
+                    <p className="text-lg font-bold">{selectedResult.partner_genotype}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm font-semibold">Possible Offspring Genotypes</p>
+                <div className="space-y-2">
+                  <div className="rounded-2xl bg-safe/10 p-3">
+                    <p className="text-xs text-muted-foreground font-medium mb-1">AA (Normal)</p>
+                    <p className="text-2xl font-bold text-safe">{selectedResult.aa_percent}%</p>
+                  </div>
+                  <div className="rounded-2xl bg-moderate/10 p-3">
+                    <p className="text-xs text-muted-foreground font-medium mb-1">AS (Carrier)</p>
+                    <p className="text-2xl font-bold text-moderate">{selectedResult.as_percent}%</p>
+                  </div>
+                  <div className="rounded-2xl bg-danger/10 p-3">
+                    <p className="text-xs text-muted-foreground font-medium mb-1">SS (Affected)</p>
+                    <p className="text-2xl font-bold text-danger">{selectedResult.ss_percent}%</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-card border border-border p-3">
+                <p className="text-xs text-muted-foreground font-medium mb-1">Risk Assessment</p>
+                <div className="flex items-center gap-2">
+                  <RiskBadge risk={selectedResult.risk_level as RiskLevel} />
+                  <span className="text-xs text-muted-foreground">
+                    {selectedResult.risk_level === "high" && "High risk of SCD in offspring"}
+                    {selectedResult.risk_level === "moderate" &&
+                      "Moderate risk of SCD in offspring"}
+                    {selectedResult.risk_level === "low" && "Low risk of SCD in offspring"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setSelectedResult(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteConfirmId !== null}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-danger" />
+              Delete Prediction
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this prediction? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4 rounded-2xl bg-muted/50 p-3">
+            {allPredictions?.find((p) => p.id === deleteConfirmId) && (
+              <p className="text-sm font-medium">
+                {allPredictions.find((p) => p.id === deleteConfirmId)?.user_genotype} +{" "}
+                {allPredictions.find((p) => p.id === deleteConfirmId)?.partner_genotype}
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+              disabled={isDeleting}
+              className="bg-danger hover:bg-danger/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <BottomNav />
       <AppFooter />

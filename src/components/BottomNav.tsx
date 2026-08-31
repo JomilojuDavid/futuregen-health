@@ -24,7 +24,9 @@ export function BottomNav() {
               to={to}
               className={cn(
                 "flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-medium transition-colors",
-                active ? "bg-primary-soft text-primary" : "text-muted-foreground hover:text-foreground",
+                active
+                  ? "bg-primary-soft text-primary"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 1.8} />

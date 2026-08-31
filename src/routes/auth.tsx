@@ -134,7 +134,6 @@ function AuthPage() {
     }
   }
 
-
   async function handleForgotPassword() {
     if (!email) {
       toast.error("Enter your email first");
@@ -185,7 +184,10 @@ function AuthPage() {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4 rounded-3xl bg-card p-5 shadow-card">
+        <form
+          onSubmit={handleSubmit}
+          className="mt-6 space-y-4 rounded-3xl bg-card p-5 shadow-card"
+        >
           {mode === "signup" ? (
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>

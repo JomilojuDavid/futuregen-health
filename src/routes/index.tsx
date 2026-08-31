@@ -24,7 +24,8 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "SicklePredict — Know Today, Protect Tomorrow" },
       {
         property: "og:description",
-        content: "Genotype compatibility checker with Punnett square odds and sickle cell risk levels.",
+        content:
+          "Genotype compatibility checker with Punnett square odds and sickle cell risk levels.",
       },
     ],
   }),
@@ -90,12 +91,11 @@ function HomePage() {
 
             {/* Hero Content */}
             <div className="space-y-3">
-              <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                SicklePredict
-              </h1>
+              <h1 className="text-4xl font-bold tracking-tight text-foreground">SicklePredict</h1>
               <p className="text-xl font-medium text-primary">Know Today, Protect Tomorrow</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Understand genotype compatibility and predict possible health outcomes for future children.
+                Understand genotype compatibility and predict possible health outcomes for future
+                children.
               </p>
             </div>
 
@@ -129,10 +129,7 @@ function HomePage() {
 
             {/* CTA Buttons */}
             <div className="pt-4 space-y-3">
-              <Link
-                to="/auth"
-                className="block"
-              >
+              <Link to="/auth" className="block">
                 <Button size="lg" className="w-full h-12 rounded-2xl text-base font-semibold">
                   Get Started
                 </Button>
@@ -193,15 +190,18 @@ function HomePage() {
                   ss_percent: outcome.percentages.SS,
                   risk_level: outcome.risk,
                 });
-                const { data, error } = await supabase.from("predictions").insert({
-                  user_id: user.id,
-                  user_genotype: outcome.user,
-                  partner_genotype: outcome.partner,
-                  aa_percent: Number(outcome.percentages.AA),
-                  as_percent: Number(outcome.percentages.AS),
-                  ss_percent: Number(outcome.percentages.SS),
-                  risk_level: outcome.risk,
-                }).select();
+                const { data, error } = await supabase
+                  .from("predictions")
+                  .insert({
+                    user_id: user.id,
+                    user_genotype: outcome.user,
+                    partner_genotype: outcome.partner,
+                    aa_percent: Number(outcome.percentages.AA),
+                    as_percent: Number(outcome.percentages.AS),
+                    ss_percent: Number(outcome.percentages.SS),
+                    risk_level: outcome.risk,
+                  })
+                  .select();
                 if (error) {
                   console.error("Failed to save prediction:", error);
                   alert(`Error saving prediction: ${error.message}`);

@@ -46,7 +46,6 @@ function PredictorPage() {
   const { user } = useAuth();
   const { pair } = useLastPair();
 
-
   const result = useMemo(
     () => predict(pair?.user ?? "AS", pair?.partner ?? "AS"),
     [pair?.user, pair?.partner],
@@ -56,7 +55,6 @@ function PredictorPage() {
 
   void user;
   void supabase;
-
 
   return (
     <div className="app-shell">

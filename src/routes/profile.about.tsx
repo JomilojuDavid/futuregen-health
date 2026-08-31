@@ -7,7 +7,10 @@ export const Route = createFileRoute("/profile/about")({
   head: () => ({
     meta: [
       { title: "About SicklePredict" },
-      { name: "description", content: "Our mission, how the genotype predictor works, and the medical disclaimer." },
+      {
+        name: "description",
+        content: "Our mission, how the genotype predictor works, and the medical disclaimer.",
+      },
       { property: "og:title", content: "About SicklePredict" },
       { property: "og:description", content: "Mission, how it works and medical disclaimer." },
     ],

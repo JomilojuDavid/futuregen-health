@@ -13,9 +13,15 @@ export const Route = createFileRoute("/profile/notifications")({
   head: () => ({
     meta: [
       { title: "Notification settings — SicklePredict" },
-      { name: "description", content: "Choose which SicklePredict alerts, summaries and reminders you receive." },
+      {
+        name: "description",
+        content: "Choose which SicklePredict alerts, summaries and reminders you receive.",
+      },
       { property: "og:title", content: "Notification settings — SicklePredict" },
-      { property: "og:description", content: "Control push alerts, summaries, tips and reminders." },
+      {
+        property: "og:description",
+        content: "Control push alerts, summaries, tips and reminders.",
+      },
     ],
   }),
   component: NotificationsPage,
